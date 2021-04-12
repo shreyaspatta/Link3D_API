@@ -118,13 +118,13 @@ namespace Link3D_API
         public partial class CubeCube
         {
 
-            public CubeCubeCube[] cubeField;
+            public Currency[] cubeField;
 
             public System.DateTime timeField;
 
             /// <remarks/>
             [System.Xml.Serialization.XmlElementAttribute("Cube")]
-            public CubeCubeCube[] Cube
+            public Currency[] Cube
             {
                 get
                 {
@@ -155,7 +155,7 @@ namespace Link3D_API
         [System.SerializableAttribute()]
         [System.ComponentModel.DesignerCategoryAttribute("code")]
         [System.Xml.Serialization.XmlTypeAttribute(AnonymousType = true, Namespace = "http://www.ecb.int/vocabulary/2002-08-01/eurofxref")]
-        public partial class CubeCubeCube
+        public partial class Currency
         {
 
             public string currencyField;
