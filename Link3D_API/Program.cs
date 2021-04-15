@@ -1,16 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Xml;
+using System.Xml.Linq;
 using System.Xml.Serialization;
-using static Link3D_API.XmlReader;
 
 namespace Link3D_API
 {
     class Program
     {
-        
         public static void Main()
         {
             bool boolcontinue ;
@@ -25,39 +25,33 @@ namespace Link3D_API
             string value1;
             string value2;
             string api_url = "https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml";
-            var webRequest = WebRequest.Create(api_url);
+            string local_loc = "C:\\Users\\Shreyas Pattabiraman\\Desktop\\eurofxref-daily.xml";
             string readalltext = null;
-            using (var response = webRequest.GetResponse())
-            using (var content = response.GetResponseStream())
-            using (var reader = new StreamReader(content))
+            XElement rootElement = XElement.Load(api_url);
+            XNamespace ad = "http://www.ecb.int/vocabulary/2002-08-01/eurofxref";
+            Dictionary<string, double> dict = new Dictionary<string, double>();
+
+            foreach (XElement elm in rootElement.Element(ad + "Cube").Element(ad + "Cube").Elements(ad + "Cube"))
             {
-                readalltext = reader.ReadToEnd();
+                IEnumerable<XAttribute> xatt = elm.Attributes();
+                dict.Add(xatt.ToArray()[0].Value, Convert.ToDouble(xatt.ToArray()[1].Value));
             }
             Console.WriteLine("--------------------------------------------------------------------------");
             Console.WriteLine("--------------------------------LINK3D------------------------------------");
             Console.WriteLine("--------------------------------------------------------------------------");
             Console.Write("Enter the input Currency: ");
-            Envelope euroconvertor = new Envelope();
-            euroconvertor = Deserialize<Envelope>(readalltext);
-            List<string> currencylist = new List<string>();
-            foreach(Currency curr in euroconvertor.Cube.Cube1.Cube)
-            {
-                currencylist.Add(curr.currency);
-            }
             string input_currency = Console.ReadLine().ToUpper();
             string output_currency= null;
             double input_value = 0.00;
-            string output_value = null;
-            double eurovalue = 0.00;
-            double output_currvalue = 0.00; 
+            double output_value = 0.00;
             bool loopcheck = true;
-            if (currencylist.Contains(input_currency))
+            if (dict.Keys.Contains(input_currency))
             {
                 do
                 {
                     Console.Write("Enter the desired Currency: ");
                     output_currency = Console.ReadLine().ToUpper();
-                    if (currencylist.Contains(output_currency))
+                    if (dict.Keys.Contains(output_currency))
                     {
                         if(input_currency == output_currency)
                         {
@@ -65,11 +59,13 @@ namespace Link3D_API
                             CurrencyLegend();
                             loopcheck = false;
                             break;
-                        }
+                        }  
+                        Console.WriteLine();
                         Console.WriteLine("--------------------------------------------------------------------------");
                         Console.WriteLine("Currency Input: " + input_currency);
                         Console.WriteLine("Currency Output: " + output_currency);
                         Console.WriteLine("--------------------------------------------------------------------------");
+                        Console.WriteLine();
                         do
                         {
                             Console.Write("Enter the Input Amount: ");
@@ -83,25 +79,15 @@ namespace Link3D_API
                                 Console.WriteLine("Please enter a valid number!");
                             }
                         } while(true);
-                        foreach (Currency curr in euroconvertor.Cube.Cube1.Cube)
-                        {
-                            if (curr.currency == input_currency)
-                            {
-                                eurovalue = Convert.ToDouble(input_value) / Convert.ToDouble(curr.rate);
-                            }
-                        }
-                        foreach (Currency curr in euroconvertor.Cube.Cube1.Cube)
-                        {
-                            if (curr.currency == output_currency)
-                            {
-                                output_currvalue = eurovalue * Convert.ToDouble(curr.rate);
-                                output_currvalue = Math.Round(output_currvalue, 2);
-                            }
-                        }
 
+                        output_value = Math.Round(input_value / dict[input_currency] * dict[output_currency],2);
+                        Console.WriteLine();
+                        Console.WriteLine();
                         Console.WriteLine("---------------------------------OUTPUT-----------------------------------");
-                        Console.WriteLine(input_currency + " " + input_value + " is " + output_currency + " " + output_currvalue);
+                        Console.WriteLine(input_currency + " " + input_value + " is " + output_currency + " " + output_value);
                         Console.WriteLine("--------------------------------------------------------------------------");
+                        Console.WriteLine();
+                        Console.WriteLine();
                         loopcheck = false;
                     }
                     else
@@ -181,6 +167,19 @@ namespace Link3D_API
             {
                 return (T)ser.Deserialize(sr);
             }
+        }
+
+        public static Dictionary<string, string> XmlToDictionary (string key, string value, XElement baseElm)
+        {
+            Dictionary<string, string> dict = new Dictionary<string, string>();
+
+            foreach (XElement elm in baseElm.Elements())
+            {
+                string dictKey = elm.Attribute(key).Value;
+                string dictVal = elm.Attribute(value).Value;
+                dict.Add(dictKey, dictVal);
+            }
+            return dict;
         }
     }
 }
